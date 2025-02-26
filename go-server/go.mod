@@ -3,7 +3,6 @@ module github.com/frinfo702/rustysearch
 go 1.22.10
 
 require (
-	github.com/golang/mock v1.6.0
 	github.com/labstack/echo/v4 v4.13.3
 	go.uber.org/mock v0.5.0
 )
