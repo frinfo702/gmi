@@ -1,0 +1,9 @@
+[package]
+name = "rust-search"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+fuzzy-matcher = "0.3.7"
+walkdir = "2"
+

@@ -1,0 +1,10 @@
+/Users/gotokenichiro/repository/rustysearch/rust-search/target/release/deps/libfuzzy_matcher-e2384bcbdb112c98.rmeta: /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/lib.rs /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/clangd.rs /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/skim.rs /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/util.rs
+
+/Users/gotokenichiro/repository/rustysearch/rust-search/target/release/deps/libfuzzy_matcher-e2384bcbdb112c98.rlib: /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/lib.rs /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/clangd.rs /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/skim.rs /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/util.rs
+
+/Users/gotokenichiro/repository/rustysearch/rust-search/target/release/deps/fuzzy_matcher-e2384bcbdb112c98.d: /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/lib.rs /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/clangd.rs /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/skim.rs /Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/util.rs
+
+/Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/lib.rs:
+/Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/clangd.rs:
+/Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/skim.rs:
+/Users/gotokenichiro/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/fuzzy-matcher-0.3.7/src/util.rs:
