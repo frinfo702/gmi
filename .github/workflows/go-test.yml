@@ -11,9 +11,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./go-server
+    # defaults:
+    #   run:
+    #     working-directory: ./go-server
 
     steps:
       - name: Checkout code
