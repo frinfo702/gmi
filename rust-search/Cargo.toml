@@ -1,9 +1,9 @@
 [package]
-name = "rust-search"
+name = "rust_search"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 fuzzy-matcher = "0.3.7"
+tempfile = "3.17.1"
 walkdir = "2"
-
