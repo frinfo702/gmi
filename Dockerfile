@@ -5,7 +5,7 @@ COPY rust-search/ ./rust-search/
 RUN cd rust-search && cargo build --release
 
 # Stage 2: Go サーバのビルド
-FROM golang:1.21 AS builder-go
+FROM golang:1.22-alpine AS builder-go
 WORKDIR /app
 COPY go-server/ ./go-server/
 # builder-rust から Rust バイナリを go-server にコピー
