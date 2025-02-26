@@ -1,5 +1,5 @@
 # Stage 1: Rust 検索エンジンのビルド
-FROM rust:1.72 AS builder-rust
+FROM rust:1.77 AS builder-rust
 WORKDIR /app
 COPY rust-search/ ./rust-search/
 RUN cd rust-search && cargo build --release
