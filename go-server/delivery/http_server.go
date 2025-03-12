@@ -5,8 +5,8 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/frinfo702/rustysearch/domain/model"
-	"github.com/frinfo702/rustysearch/usecase"
+	"github.com/frinfo702/fixer/domain/model"
+	"github.com/frinfo702/fixer/usecase"
 	"github.com/labstack/echo/v4"
 )
 
@@ -39,13 +39,11 @@ func (h *HTTPHandler) handleIndex(c echo.Context) error {
 }
 
 func (h *HTTPHandler) handleSearch(c echo.Context) error {
-	path := c.QueryParam("path")
 	queryStr := c.QueryParam("query")
 	fuzzy := c.QueryParam("fuzzy") == "on"
 
-	if path == "" {
-		path = "."
-	}
+	// パスは固定で "." を使用（非表示）
+	path := "."
 
 	data := PageData{
 		Query: queryStr,
@@ -59,11 +57,16 @@ func (h *HTTPHandler) handleSearch(c echo.Context) error {
 			Query: queryStr,
 			Fuzzy: fuzzy,
 		}
-		results, err := h.searchInteractor.Execute(searchQuery) // これを実装する
+		results, err := h.searchInteractor.Execute(searchQuery)
 		if err != nil {
 			data.Error = err.Error()
 		} else {
-			data.Results = results
+			// 結果を最大10個に制限
+			if len(results) > 10 {
+				data.Results = results[:10]
+			} else {
+				data.Results = results
+			}
 		}
 	}
 
@@ -74,7 +77,6 @@ func (h *HTTPHandler) handleSearch(c echo.Context) error {
 	}
 
 	return c.HTML(http.StatusOK, buf.String())
-
 }
 
 const pageHTML = `
@@ -83,22 +85,30 @@ const pageHTML = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RustySearch</title>
+    <title>RustySearch - Code Search</title>
     <style>
         :root {
-            /* Color palette */
-            --black-primary: #191919;
-            --black-secondary: #262625;
-            --black-tertiary: #40403E;
-            --gray-primary: #666663;
-            --gray-secondary: #91918D;
-            --gray-tertiary: #BFBFBA;
-            --white-primary: #E5E4DF;
-            --white-secondary: #F0F0EB;
-            --white-tertiary: #FAFAF7;
-            --orange-primary: #CC785C;
-            --orange-secondary: #D4A27F;
-            --orange-tertiary: #EBDBBC;
+            /* Google-inspired color palette */
+            --blue-primary: #4285F4;
+            --blue-hover: #1a73e8;
+            --red: #EA4335;
+            --yellow: #FBBC05;
+            --green: #34A853;
+            --gray-50: #F8F9FA;
+            --gray-100: #F1F3F4;
+            --gray-200: #E8EAED;
+            --gray-300: #DADCE0;
+            --gray-400: #BDC1C6;
+            --gray-500: #9AA0A6;
+            --gray-600: #80868B;
+            --gray-700: #5F6368;
+            --gray-800: #3C4043;
+            --gray-900: #202124;
+            --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.1);
+            --shadow-md: 0 2px 6px rgba(60, 64, 67, 0.15);
+            --shadow-lg: 0 4px 12px rgba(60, 64, 67, 0.2);
+            --font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            --mono-font: 'Google Sans Mono', 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
         }
 
         * {
@@ -108,81 +118,119 @@ const pageHTML = `
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            background-color: var(--white-tertiary);
-            color: var(--black-primary);
+            font-family: var(--font-family);
+            background-color: var(--gray-50);
+            color: var(--gray-900);
             line-height: 1.6;
-            padding: 0;
-            margin: 0;
             min-height: 100vh;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1.5rem;
         }
 
         header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 2rem 0;
+            text-align: center;
         }
 
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
+        .logo {
+            display: flex;
+            align-items: center;
             margin-bottom: 0.5rem;
-            color: var(--black-primary);
-            letter-spacing: -0.03em;
         }
+
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 500;
+            color: var(--gray-900);
+            letter-spacing: -0.02em;
+        }
+
+        .logo-text span:nth-child(1) { color: var(--blue-primary); }
+        .logo-text span:nth-child(2) { color: var(--red); }
+        .logo-text span:nth-child(3) { color: var(--yellow); }
+        .logo-text span:nth-child(4) { color: var(--blue-primary); }
+        .logo-text span:nth-child(5) { color: var(--green); }
+        .logo-text span:nth-child(6) { color: var(--red); }
+        .logo-text span:nth-child(7) { color: var(--blue-primary); }
+        .logo-text span:nth-child(8) { color: var(--green); }
+        .logo-text span:nth-child(9) { color: var(--yellow); }
+        .logo-text span:nth-child(10) { color: var(--blue-primary); }
 
         .tagline {
-            font-size: 1.125rem;
-            color: var(--gray-primary);
+            font-size: 0.95rem;
+            color: var(--gray-600);
             margin-bottom: 2rem;
         }
 
         .search-container {
-            background-color: var(--white-secondary);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-            margin-bottom: 2.5rem;
+            width: 100%;
+            max-width: 650px;
+            margin: 0 auto 2rem;
         }
 
-        .form-group {
-            margin-bottom: 1.5rem;
+        .search-box {
             position: relative;
+            margin-bottom: 1.5rem;
         }
 
-        label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: var(--gray-primary);
+        .search-input {
+            width: 100%;
+            padding: 0.85rem 1rem 0.85rem 3rem;
+            font-size: 1rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 24px;
+            background-color: white;
+            color: var(--gray-900);
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
         }
 
-        input[type="text"] {
+        .search-input:focus {
+            outline: none;
+            box-shadow: var(--shadow-md);
+            border-color: var(--blue-primary);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-600);
+            width: 20px;
+            height: 20px;
+        }
+
+        .path-input {
             width: 100%;
             padding: 0.75rem 1rem;
-            font-size: 1rem;
-            border: 1px solid var(--gray-tertiary);
-            border-radius: 6px;
-            background-color: var(--white-tertiary);
-            color: var(--black-primary);
+            font-size: 0.95rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            background-color: white;
+            color: var(--gray-900);
             transition: all 0.2s ease;
+            margin-bottom: 1rem;
         }
 
-        input[type="text"]:focus {
+        .path-input:focus {
             outline: none;
-            border-color: var(--orange-secondary);
-            box-shadow: 0 0 0 3px rgba(212, 162, 127, 0.2);
+            border-color: var(--blue-primary);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
         }
 
-        .checkbox-group {
+        .search-options {
             display: flex;
             align-items: center;
-            margin-bottom: 1.5rem;
+            justify-content: space-between;
+            margin-bottom: 1rem;
         }
 
         .checkbox-container {
@@ -194,26 +242,27 @@ const pageHTML = `
         input[type="checkbox"] {
             appearance: none;
             -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            border: 1px solid var(--gray-tertiary);
-            border-radius: 4px;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--gray-400);
+            border-radius: 2px;
             margin-right: 8px;
             position: relative;
             cursor: pointer;
-            background-color: var(--white-tertiary);
+            background-color: white;
+            transition: all 0.2s ease;
         }
 
         input[type="checkbox"]:checked {
-            background-color: var(--orange-primary);
-            border-color: var(--orange-primary);
+            background-color: var(--blue-primary);
+            border-color: var(--blue-primary);
         }
 
         input[type="checkbox"]:checked::after {
             content: "";
             position: absolute;
-            left: 6px;
-            top: 2px;
+            left: 5px;
+            top: 1px;
             width: 5px;
             height: 10px;
             border: solid white;
@@ -223,142 +272,46 @@ const pageHTML = `
 
         input[type="checkbox"]:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(212, 162, 127, 0.2);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
         }
 
         .checkbox-label {
             font-size: 0.875rem;
-            color: var(--gray-primary);
+            color: var(--gray-700);
         }
 
-        button {
-            background-color: var(--orange-primary);
-            color: var(--white-tertiary);
+        .search-button {
+            background-color: var(--blue-primary);
+            color: white;
             border: none;
             padding: 0.75rem 1.5rem;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 500;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
 
-        button:hover {
-            background-color: #b86a4f;
+        .search-button:hover {
+            background-color: var(--blue-hover);
+            box-shadow: var(--shadow-sm);
         }
 
-        button:focus {
+        .search-button:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(204, 120, 92, 0.3);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.3);
         }
 
-        .results-container {
-            margin-top: 2rem;
-        }
-
-        .results-header {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            color: var(--black-primary);
-        }
-
-        .results-count {
-            color: var(--orange-primary);
-            font-weight: 700;
-        }
-
-        .result {
-            background-color: var(--white-secondary);
-            border-radius: 8px;
-            padding: 1.25rem;
-            margin-bottom: 1rem;
-            border-left: 3px solid var(--orange-secondary);
-            transition: all 0.2s ease;
-        }
-
-        .result:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
-        }
-
-        .file {
-            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
-            font-weight: 600;
-            color: var(--black-primary);
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .line-number {
-            color: var(--orange-primary);
-            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
-            font-size: 0.8rem;
-            padding: 0.125rem 0.375rem;
-            background-color: var(--orange-tertiary);
-            border-radius: 4px;
-            margin-left: 0.5rem;
-        }
-
-        .line-text {
-            display: block;
-            margin-top: 0.5rem;
-            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            padding: 0.75rem;
-            background-color: var(--white-tertiary);
-            border-radius: 4px;
-            overflow-x: auto;
-            color: var(--black-secondary);
-        }
-
-        .error {
-            background-color: rgba(255, 0, 0, 0.1);
-            color: #d63031;
-            padding: 1rem;
-            border-radius: 6px;
-            margin-bottom: 1.5rem;
-        }
-
-        .no-results {
-            text-align: center;
-            padding: 3rem 0;
-            color: var(--gray-secondary);
-        }
-
-        .no-results-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-            color: var(--gray-tertiary);
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-
-            .search-container {
-                padding: 1.5rem;
-            }
-        }
-
-        /* Keyboard shortcuts hint */
-        .keyboard-shortcuts {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
+        .keyboard-hint {
+            display: inline-flex;
+            align-items: center;
             font-size: 0.75rem;
-            color: var(--gray-secondary);
-            background-color: var(--white-primary);
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
+            color: var(--gray-500);
         }
 
         kbd {
-            background-color: var(--white-tertiary);
-            border: 1px solid var(--gray-tertiary);
+            background-color: var(--gray-100);
+            border: 1px solid var(--gray-300);
             border-radius: 3px;
             box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
             font-size: 0.7rem;
@@ -367,72 +320,240 @@ const pageHTML = `
             margin: 0 0.1rem;
         }
 
-        /* Empty state */
+        .results-container {
+            margin-top: 2rem;
+        }
+
+        .results-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .results-count {
+            font-size: 0.95rem;
+            color: var(--gray-700);
+        }
+
+        .results-count strong {
+            color: var(--blue-primary);
+        }
+
+        .result {
+            background-color: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid var(--blue-primary);
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .result:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .file {
+            font-family: var(--mono-font);
+            font-weight: 500;
+            color: var(--gray-800);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .file-icon {
+            color: var(--gray-600);
+            margin-right: 0.5rem;
+        }
+
+        .line-number {
+            color: white;
+            background-color: var(--blue-primary);
+            font-family: var(--mono-font);
+            font-size: 0.75rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 12px;
+            margin-left: 0.5rem;
+        }
+
+        .line-text {
+            display: block;
+            margin-top: 0.5rem;
+            font-family: var(--mono-font);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            padding: 0.75rem;
+            background-color: var(--gray-50);
+            border-radius: 4px;
+            overflow-x: auto;
+            color: var(--gray-800);
+            border: 1px solid var(--gray-200);
+        }
+
+        .error {
+            background-color: rgba(234, 67, 53, 0.1);
+            color: var(--red);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .error-icon {
+            margin-right: 0.5rem;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem 0;
+            color: var(--gray-600);
+        }
+
+        .no-results-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--gray-400);
+        }
+
         .empty-state {
             text-align: center;
             padding: 4rem 0;
         }
 
         .empty-state-icon {
-            font-size: 3rem;
-            color: var(--gray-tertiary);
-            margin-bottom: 1rem;
+            font-size: 3.5rem;
+            color: var(--blue-primary);
+            margin-bottom: 1.5rem;
         }
 
         .empty-state-text {
-            color: var(--gray-secondary);
-            font-size: 1.125rem;
+            color: var(--gray-700);
+            font-size: 1.25rem;
             margin-bottom: 1.5rem;
+        }
+
+        .features-list {
+            text-align: left;
+            max-width: 450px;
+            margin: 0 auto;
+            color: var(--gray-600);
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .features-list li {
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .features-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        .feature-icon {
+            color: var(--blue-primary);
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .search-options {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .keyboard-hint {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>RustySearch</h1>
+            <div class="logo">
+                <h1 class="logo-text">
+                    <span>R</span><span>u</span><span>s</span><span>t</span><span>y</span><span>S</span><span>e</span><span>a</span><span>r</span><span>c</span><span>h</span>
+                </h1>
+            </div>
             <p class="tagline">Fast and fuzzy code search powered by Rust and Go</p>
         </header>
 
         <div class="search-container">
             <form method="GET" action="/search">
-                <div class="form-group">
-                    <label for="path">Directory Path</label>
-                    <input type="text" id="path" name="path" value="{{.Path}}" placeholder="Enter repository or folder path..." />
-                    <div class="keyboard-shortcuts"><kbd>/</kbd> to focus</div>
+                <div class="search-box">
+                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input 
+                        type="text" 
+                        id="query" 
+                        name="query" 
+                        value="{{.Query}}" 
+                        placeholder="Search code..." 
+                        class="search-input" 
+                        autocomplete="off"
+                    />
                 </div>
                 
-                <div class="form-group">
-                    <label for="query">Search Query</label>
-                    <input type="text" id="query" name="query" value="{{.Query}}" placeholder="Type your search query..." />
-                    <div class="keyboard-shortcuts"><kbd>Ctrl</kbd> + <kbd>K</kbd> to focus</div>
-                </div>
-                
-                <div class="checkbox-group">
+                <div class="search-options">
                     <label class="checkbox-container">
                         <input type="checkbox" name="fuzzy" id="fuzzy" {{if .Fuzzy}}checked{{end}} />
-                        <span class="checkbox-label">Enable fuzzy search (more flexible matching)</span>
+                        <span class="checkbox-label">Enable fuzzy search</span>
                     </label>
+                    
+                    <div class="keyboard-hint">
+                        <span>Shortcut: <kbd>Ctrl</kbd> + <kbd>K</kbd> for query</span>
+                    </div>
+                    
+                    <button type="submit" class="search-button">Search</button>
                 </div>
-                
-                <button type="submit">Search Files</button>
             </form>
         </div>
 
         {{if .Error}}
             <div class="error">
-                <strong>Error:</strong> {{.Error}}
+                <svg class="error-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span>{{.Error}}</span>
             </div>
         {{end}}
 
         {{if .Results}}
             <div class="results-container">
-                <h3 class="results-header">Found <span class="results-count">{{len .Results}}</span> result(s):</h3>
+                <div class="results-header">
+                    <div class="results-count">
+                        <strong>{{len .Results}}</strong> results found
+                    </div>
+                </div>
                 
                 {{range .Results}}
                     <div class="result">
                         <div class="file">
+                            <svg class="file-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
                             {{.FilePath}}
-                            <span class="line-number">Line {{.LineNumber}}</span>
+                            <span class="line-number">{{.LineNumber}}</span>
                         </div>
                         <code class="line-text">{{.LineText}}</code>
                     </div>
@@ -441,16 +562,42 @@ const pageHTML = `
         {{else if and (not .Error) (ne .Query "")}}
             <div class="no-results">
                 <div class="no-results-icon">🔍</div>
-                <p>No matches found. Try adjusting your search query or enable fuzzy search.</p>
+                <p>No matches found for "<strong>{{.Query}}</strong>"</p>
+                <p>Try adjusting your search query or enable fuzzy search for more flexible matching.</p>
             </div>
         {{else if and (not .Error) (eq .Query "")}}
             <div class="empty-state">
-                <div class="empty-state-icon">⚡</div>
-                <p class="empty-state-text">Enter a search query to find code in your projects</p>
-                <ul style="text-align: left; max-width: 400px; margin: 0 auto; color: var(--gray-primary);">
-                    <li>Search for functions, classes, or specific code patterns</li>
-                    <li>Enable fuzzy search for more flexible matching</li>
-                    <li>Results show file location and exact line numbers</li>
+                <div class="empty-state-icon">🚀</div>
+                <p class="empty-state-text">Powerful code search at your fingertips</p>
+                <ul class="features-list">
+                    <li>
+                        <svg class="feature-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        Search for functions, variables, or specific code patterns
+                    </li>
+                    <li>
+                        <svg class="feature-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        Enable fuzzy search for more flexible matching
+                    </li>
+                    <li>
+                        <svg class="feature-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        Results show file location and exact line numbers
+                    </li>
+                    <li>
+                        <svg class="feature-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 11 12 14 22 4"></polyline>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                        </svg>
+                        Powered by Rust for lightning-fast performance
+                    </li>
                 </ul>
             </div>
         {{end}}
@@ -459,12 +606,6 @@ const pageHTML = `
     <script>
         // Add keyboard shortcuts
         document.addEventListener('keydown', function(e) {
-            // "/" to focus path input
-            if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
-                e.preventDefault();
-                document.getElementById('path').focus();
-            }
-            
             // Ctrl+K to focus query input
             if (e.key === 'k' && (e.ctrlKey || e.metaKey) && document.activeElement.tagName !== 'INPUT') {
                 e.preventDefault();

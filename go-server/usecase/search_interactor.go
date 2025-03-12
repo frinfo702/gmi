@@ -1,12 +1,15 @@
 package usecase
 
-import "github.com/frinfo702/rustysearch/domain/model"
+import (
+	"github.com/frinfo702/fixer/domain/model"
+	"github.com/frinfo702/fixer/infrastructure"
+)
 
 type SearchInteractor struct {
-	searcher Searcher
+	searcher infrastructure.Searcher
 }
 
-func NewSearchInteractor(searcher Searcher) *SearchInteractor {
+func NewSearchInteractor(searcher infrastructure.Searcher) *SearchInteractor {
 	return &SearchInteractor{searcher: searcher}
 }
 

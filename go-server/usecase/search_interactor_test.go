@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/frinfo702/rustysearch/domain/model"
-	"github.com/frinfo702/rustysearch/usecase"
-	"github.com/frinfo702/rustysearch/usecase/mock"
+	"github.com/frinfo702/fixer/domain/model"
+	"github.com/frinfo702/fixer/usecase"
+	"github.com/frinfo702/fixer/usecase/mock"
 	"go.uber.org/mock/gomock"
 )
 

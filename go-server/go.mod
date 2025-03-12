@@ -1,4 +1,4 @@
-module github.com/frinfo702/rustysearch
+module github.com/frinfo702/fixer
 
 go 1.22
 

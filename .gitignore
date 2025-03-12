@@ -1,0 +1,5 @@
+# Rust build artifacts
+rust-search/target/
+
+.DS_Store
+.env

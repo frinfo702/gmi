@@ -12,7 +12,7 @@ package mock
 import (
 	reflect "reflect"
 
-	model "github.com/frinfo702/rustysearch/domain/model"
+	model "github.com/frinfo702/fixer/domain/model"
 	gomock "go.uber.org/mock/gomock"
 )
 

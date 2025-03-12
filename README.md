@@ -46,7 +46,7 @@ The project consists of two main components:
 
 3. Start the Go server:
    ```bash
-   cd ../go-server
+   cd ../go-server/cmd
    go mod tidy
    go run main.go
    ```
