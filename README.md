@@ -1,54 +1,83 @@
-# RustySearch Go Server
+# RustySearch
 
-This project is a Go server that includes functionality for searching and returning results from files. It is designed to be efficient and easy to use.
+RustySearch is a high-performance, scalable file search engine project that leverages the strengths of both Rust and Go to provide efficient search capabilities.
 
-## Project Structure
+## 🎯 Project Goals
 
-```
-RustySearch
-└── go-server
-    ├── .github
-    │   └── workflows
-    │       └── go-test.yml
-    ├── domain
-    │   └── model
-    │       └── search_test.go
-    └── README.md
-```
+- Implementation of a high-performance file search engine using Rust
+- Provision of a stable HTTP server using Go
+- Flexible search functionality through fuzzy matching
+- Scalability through microservices architecture
 
-## Getting Started
+## 🏗 System Architecture
 
-To get started with the project, follow these steps:
+The project consists of two main components:
 
-1. **Clone the repository:**
+1. **Rust Search Engine** (`rust-search/`)
+   - File system traversal and search index creation
+   - Flexible search functionality using fuzzy-matcher
+   - High-performance search processing
+
+2. **Go HTTP Server** (`go-server/`)
+   - RESTful API provision
+   - Integration with Rust search engine
+   - Client request handling
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Rust 1.70 or higher
+- Go 1.20 or higher
+- Docker (optional)
+
+### Local Development
+
+1. Clone the repository:
    ```bash
    git clone https://github.com/yourusername/RustySearch.git
-   cd RustySearch/go-server
+   cd RustySearch
    ```
 
-2. **Install Go:**
-   Make sure you have Go installed on your machine. You can download it from the [official Go website](https://golang.org/dl/).
-
-3. **Install dependencies:**
-   Run the following command to install the necessary dependencies:
+2. Build the Rust component:
    ```bash
+   cd rust-search
+   cargo build --release
+   ```
+
+3. Start the Go server:
+   ```bash
+   cd ../go-server
    go mod tidy
+   go run main.go
    ```
 
-4. **Run tests:**
-   To run the tests, use the following command:
-   ```bash
-   go test ./... -v
-   ```
+### Docker Deployment
 
-## GitHub Actions
+```bash
+docker-compose up
+```
 
-This project uses GitHub Actions for continuous integration. The workflow is defined in `.github/workflows/go-test.yml`, which runs tests automatically on pushes and pull requests to the main branch.
+## 🔍 Key Features
 
-## Contributing
+- Recursive file system traversal
+- Fuzzy matching for filename search
+- Full-text search within files
+- Search interface through RESTful API
 
-Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
+## 🛠 API Endpoints
 
-## License
+- `GET /search?q={query}` - Search by filename
+- `GET /search/content?q={query}` - Search within file contents
+- `GET /status` - Check service status
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
