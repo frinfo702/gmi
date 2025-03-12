@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="100%" height="100%">
+  <style>
+    .st0{fill:#F8F9FA;}
+    .st1{fill:#FFFFFF;}
+    .st2{fill:#4285F4;}
+    .st3{fill:#EA4335;}
+    .st4{fill:#34A853;}
+    .st5{fill:#FBBC05;}
+    .st6{fill:#E8EAED;}
+    .st7{fill:#DADCE0;}
+    .st8{fill:#202124;}
+    .st9{fill:#5F6368;}
+    .st10{fill:none;stroke:#DADCE0;stroke-width:2;stroke-miterlimit:10;}
+    .st11{font-family:'Arial', sans-serif;font-size:12px;}
+    .st12{fill:none;stroke:#4285F4;stroke-width:2;stroke-miterlimit:10;}
+    .st13{fill:none;stroke:#34A853;stroke-width:2;stroke-miterlimit:10;}
+  </style>
+  
+  <!-- Background -->
+  <rect class="st0" width="800" height="600"/>
+  
+  <!-- Code base illustration -->
+  <g transform="translate(100, 80)">
+    <!-- Code editor window -->
+    <rect class="st1" x="0" y="0" width="600" height="440" rx="8" ry="8" filter="drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.1))"/>
+    <rect class="st8" x="0" y="0" width="600" height="30" rx="8" ry="8"/>
+    <rect class="st8" x="0" y="0" width="600" height="30" rx="8" ry="0"/>
+    
+    <!-- Window buttons -->
+    <circle class="st3" cx="20" cy="15" r="6"/>
+    <circle class="st5" cx="40" cy="15" r="6"/>
+    <circle class="st4" cx="60" cy="15" r="6"/>
+    
+    <!-- Left sidebar -->
+    <rect class="st6" x="0" y="30" width="60" height="410"/>
+    
+    <!-- File structure -->
+    <rect class="st0" x="70" y="40" width="180" height="390"/>
+    <rect class="st7" x="70" y="40" width="180" height="30"/>
+    <text x="85" y="60" class="st9 st11">File Explorer</text>
+    
+    <!-- Folder structure -->
+    <g transform="translate(80, 80)">
+      <path class="st2" d="M0,0 L16,0 L16,16 L0,16 Z" transform="scale(0.8)"/>
+      <text x="20" y="5" class="st9 st11">src/</text>
+      
+      <g transform="translate(15, 20)">
+        <path class="st2" d="M0,0 L16,0 L16,16 L0,16 Z" transform="scale(0.8)"/>
+        <text x="20" y="5" class="st9 st11">models/</text>
+        
+        <g transform="translate(15, 20)">
+          <path class="st3" d="M0,0 L16,0 L16,16 L0,16 Z" transform="scale(0.7)"/>
+          <text x="20" y="5" class="st9 st11">user.go</text>
+        </g>
+        
+        <g transform="translate(15, 40)">
+          <path class="st3" d="M0,0 L16,0 L16,16 L0,16 Z" transform="scale(0.7)"/>
+          <text x="20" y="5" class="st9 st11">post.go</text>
+        </g>
+      </g>
+      
+      <g transform="translate(15, 100)">
+        <path class="st2" d="M0,0 L16,0 L16,16 L0,16 Z" transform="scale(0.8)"/>
+        <text x="20" y="5" class="st9 st11">controllers/</text>
+        
+        <g transform="translate(15, 20)">
+          <path class="st3" d="M0,0 L16,0 L16,16 L0,16 Z" transform="scale(0.7)"/>
+          <text x="20" y="5" class="st9 st11">auth_controller.go</text>
+        </g>
+      </g>
+      
+      <g transform="translate(15, 160)">
+        <path class="st2" d="M0,0 L16,0 L16,16 L0,16 Z" transform="scale(0.8)"/>
+        <text x="20" y="5" class="st9 st11">services/</text>
+      </g>
+      
+      <g transform="translate(0, 200)">
+        <path class="st2" d="M0,0 L16,0 L16,16 L0,16 Z" transform="scale(0.8)"/>
+        <text x="20" y="5" class="st9 st11">tests/</text>
+      </g>
+    </g>
+    
+    <!-- Code area -->
+    <rect class="st1" x="260" y="40" width="330" height="390"/>
+    <rect class="st7" x="260" y="40" width="330" height="30"/>
+    <text x="270" y="60" class="st9 st11">user.go</text>
+    
+    <!-- Code content -->
+    <g transform="translate(270, 80)">
+      <text x="0" y="0" class="st9 st11">package models</text>
+      <text x="0" y="20" class="st9 st11"></text>
+      <text x="0" y="40" class="st9 st11">type User struct {</text>
+      <text x="20" y="60" class="st9 st11">ID        string    `json:"id"`</text>
+      <text x="20" y="80" class="st9 st11">Name      string    `json:"name"`</text>
+      <text x="20" y="100" class="st9 st11">Email     string    `json:"email"`</text>
+      <text x="20" y="120" class="st9 st11">CreatedAt time.Time `json:"created_at"`</text>
+      <text x="0" y="140" class="st9 st11">}</text>
+      <text x="0" y="160" class="st9 st11"></text>
+      <text x="0" y="180" class="st9 st11">func NewUser(name, email string) *User {</text>
+      <text x="20" y="200" class="st9 st11">return &User{</text>
+      <text x="40" y="220" class="st9 st11">ID:        uuid.New().String(),</text>
+      <text x="40" y="240" class="st9 st11">Name:      name,</text>
+      <text x="40" y="260" class="st9 st11">Email:     email,</text>
+      <text x="40" y="280" class="st9 st11">CreatedAt: time.Now(),</text>
+      <text x="20" y="300" class="st9 st11">}</text>
+      <text x="0" y="320" class="st9 st11">}</text>
+    </g>
+    
+    <!-- Search highlight overlay -->
+    <rect class="st5" opacity="0.2" x="270" y="260" width="80" height="20" rx="2" ry="2"/>
+    <rect class="st2" opacity="0.2" x="270" y="80" width="80" height="20" rx="2" ry="2"/>
+    
+    <!-- Search box -->
+    <g transform="translate(200, 500)">
+      <rect class="st1" x="0" y="0" width="400" height="50" rx="25" ry="25" filter="drop-shadow(0px 4px 6px rgba(0, 0, 0, 0.1))"/>
+      <circle class="st2" cx="25" cy="25" r="15"/>
+      <path class="st1" d="M25,18 L25,32 M18,25 L32,25" stroke-width="2"/>
+      <text x="50" y="30" class="st9" style="font-family:'Arial', sans-serif;font-size:16px;">Search code...</text>
+    </g>
+    
+    <!-- Search beams -->
+    <line class="st12" x1="225" y1="500" x2="270" y2="280" stroke-dasharray="5,5"/>
+    <line class="st12" x1="225" y1="500" x2="270" y2="100" stroke-dasharray="5,5"/>
+    <line class="st13" x1="225" y1="500" x2="350" y2="200" stroke-dasharray="5,5"/>
+  </g>
+  
+  <!-- Bottom decorative elements -->
+  <g transform="translate(0, 550)">
+    <rect class="st2" x="100" y="0" width="100" height="10" rx="5" ry="5"/>
+    <rect class="st3" x="250" y="0" width="50" height="10" rx="5" ry="5"/>
+    <rect class="st4" x="350" y="0" width="150" height="10" rx="5" ry="5"/>
+    <rect class="st5" x="550" y="0" width="80" height="10" rx="5" ry="5"/>
+  </g>
+</svg> 
