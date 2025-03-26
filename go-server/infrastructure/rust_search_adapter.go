@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os/exec"
 	"sort"
 	"strings"
@@ -16,6 +17,7 @@ type RustSearchAdapter struct {
 }
 
 func NewRustSearchAdapter(binaryPath string) *RustSearchAdapter {
+	log.Printf("RustSearchAdapter initialized with binary path: %s", binaryPath)
 	return &RustSearchAdapter{binaryPath: binaryPath}
 }
 
@@ -25,6 +27,7 @@ func (r *RustSearchAdapter) Search(query model.SearchQuery) ([]model.SearchResul
 		args = append(args, "--fuzzy")
 	}
 
+	log.Printf("Executing Rust search: %s %v", r.binaryPath, args)
 	cmd := exec.Command(r.binaryPath, args...)
 	var outBuf, errBuf bytes.Buffer
 	cmd.Stdout = &outBuf
@@ -35,10 +38,12 @@ func (r *RustSearchAdapter) Search(query model.SearchQuery) ([]model.SearchResul
 		if errMsg == "" {
 			errMsg = err.Error()
 		}
+		log.Printf("Rust search error: %s", errMsg)
 		return nil, fmt.Errorf("rust search error: %s", errMsg)
 	}
 
 	output := outBuf.String()
+	log.Printf("Rust search output received: %d bytes", len(output))
 	var results []model.SearchResult
 	lines := strings.Split(output, "\n")
 	for _, line := range lines {
@@ -101,5 +106,6 @@ func (r *RustSearchAdapter) Search(query model.SearchQuery) ([]model.SearchResul
 		return queryInI && !queryInJ
 	})
 
+	log.Printf("Processed search results: %d items", len(results))
 	return results, nil
 }
