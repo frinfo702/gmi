@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# エラーが発生したらスクリプトを停止
-set -e
-
 echo "RustySearch MVPの起動スクリプト"
 echo "==============================="
 
@@ -44,13 +41,17 @@ fi
 
 echo "1. Rustバイナリのビルド..."
 cd "$PROJECT_ROOT/rust-search"
-cargo build --release
+cargo build --release || { echo "Rustビルドに失敗しました"; exit 1; }
 
 echo "2. Rustバイナリの確認: $RUST_BIN"
 if [ ! -f "$RUST_BIN" ]; then
   echo "エラー: Rustバイナリが見つかりません"
   exit 1
 fi
+
+# 環境変数ファイルを更新
+echo "SEARCH_ROOT=$RUST_BIN" > "$GO_SERVER_DIR/.env"
+echo "環境変数ファイルを更新しました: $GO_SERVER_DIR/.env"
 
 echo "3. Goサーバーの起動..."
 cd "$GO_SERVER_DIR"
