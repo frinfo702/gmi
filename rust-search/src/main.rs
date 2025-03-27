@@ -17,7 +17,7 @@ fn main() -> Result<()> {
                     target_dir = &args[arg_index];
                 } else {
                     eprintln!("エラー: --dir オプションにはディレクトリパスが必要です。");
-                    return Ok(());
+                    std::process::exit(1);
                 }
             }
             "--fuzzy" | "-f" => {
@@ -41,7 +41,7 @@ fn main() -> Result<()> {
 
     if query.is_none() {
         print_usage(&args[0]);
-        return Ok(());
+        std::process::exit(1);
     }
     let query = query.unwrap();
 
