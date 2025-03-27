@@ -14,7 +14,7 @@ fn main() -> Result<()> {
             "--dir" | "-d" => {
                 arg_index += 1;
                 if arg_index < args.len() {
-                    target_dir = &args[arg_index];
+                    target_dir = args[arg_index].as_str();
                 } else {
                     eprintln!("エラー: --dir オプションにはディレクトリパスが必要です。");
                     std::process::exit(1);

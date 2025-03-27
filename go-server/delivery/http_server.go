@@ -42,20 +42,20 @@ func (h *HTTPHandler) handleSearch(c echo.Context) error {
 	queryStr := c.QueryParam("query")
 	fuzzy := c.QueryParam("fuzzy") == "on"
 	// パスパラメータを取得する（デフォルト値は "."）
-	pathStr := c.QueryParam("path")
-	if pathStr == "" {
-		pathStr = "."
+	targetDir := c.QueryParam("path")
+	if targetDir == "" {
+		targetDir = "."
 	}
 
 	data := PageData{
 		Query: queryStr,
-		Path:  pathStr,
+		Path:  targetDir,
 		Fuzzy: fuzzy,
 	}
 
 	if queryStr != "" {
 		searchQuery := model.SearchQuery{
-			Path:  pathStr,
+			Path:  targetDir,
 			Query: queryStr,
 			Fuzzy: fuzzy,
 		}
