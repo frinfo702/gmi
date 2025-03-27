@@ -42,20 +42,20 @@ func (h *HTTPHandler) handleSearch(c echo.Context) error {
 	queryStr := c.QueryParam("query")
 	fuzzy := c.QueryParam("fuzzy") == "on"
 	// パスパラメータを取得する（デフォルト値は "."）
-	pathStr := c.QueryParam("path")
-	if pathStr == "" {
-		pathStr = "."
+	targetDir := c.QueryParam("path")
+	if targetDir == "" {
+		targetDir = "."
 	}
 
 	data := PageData{
 		Query: queryStr,
-		Path:  pathStr,
+		Path:  targetDir,
 		Fuzzy: fuzzy,
 	}
 
 	if queryStr != "" {
 		searchQuery := model.SearchQuery{
-			Path:  pathStr,
+			Path:  targetDir,
 			Query: queryStr,
 			Fuzzy: fuzzy,
 		}
@@ -546,7 +546,7 @@ const pageHTML = `
                 </div>
                 
                 <div class="input-group">
-                    <label for="path" class="input-label">検索対象ディレクトリ（空白の場合はカレントディレクトリ）:</label>
+                    <label for="path" class="input-label">検索対象ディレクトリ（絶対パスまたは相対パス）:</label>
                     <input 
                         type="text" 
                         id="path" 
@@ -555,7 +555,7 @@ const pageHTML = `
                         placeholder="/path/to/search" 
                         class="path-input"
                     />
-                    <p class="dir-help">例: /Users/username/projects/myapp または相対パス ./src</p>
+                    <p class="dir-help">例: /Users/username/projects/myapp（絶対パス）または ./src（相対パス）</p>
                 </div>
                 
                 <div class="search-options">
