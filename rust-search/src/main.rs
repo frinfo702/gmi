@@ -32,7 +32,7 @@ fn main() -> Result<()> {
                         args[arg_index]
                     );
                     print_usage(&args[0]);
-                    return Ok(());
+                    std::process::exit(1);
                 }
             }
         }
