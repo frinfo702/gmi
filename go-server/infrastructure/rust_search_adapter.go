@@ -22,7 +22,15 @@ func NewRustSearchAdapter(binaryPath string) *RustSearchAdapter {
 }
 
 func (r *RustSearchAdapter) Search(query model.SearchQuery) ([]model.SearchResult, error) {
-	args := []string{query.Query}
+	// 引数リストを構築
+	args := []string{query.Query} // 最初にクエリを追加
+
+	// 検索対象ディレクトリを追加 (指定されていれば)
+	if query.Path != "" && query.Path != "." {
+		args = append(args, "--dir", query.Path)
+	}
+
+	// ファジー検索フラグを追加
 	if query.Fuzzy {
 		args = append(args, "--fuzzy")
 	}

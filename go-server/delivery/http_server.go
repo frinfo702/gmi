@@ -41,19 +41,21 @@ func (h *HTTPHandler) handleIndex(c echo.Context) error {
 func (h *HTTPHandler) handleSearch(c echo.Context) error {
 	queryStr := c.QueryParam("query")
 	fuzzy := c.QueryParam("fuzzy") == "on"
-
-	// パスは固定で "." を使用（非表示）
-	path := "."
+	// パスパラメータを取得する（デフォルト値は "."）
+	pathStr := c.QueryParam("path")
+	if pathStr == "" {
+		pathStr = "."
+	}
 
 	data := PageData{
 		Query: queryStr,
-		Path:  path,
+		Path:  pathStr,
 		Fuzzy: fuzzy,
 	}
 
 	if queryStr != "" {
 		searchQuery := model.SearchQuery{
-			Path:  path,
+			Path:  pathStr,
 			Query: queryStr,
 			Fuzzy: fuzzy,
 		}
@@ -208,6 +210,17 @@ const pageHTML = `
             height: 20px;
         }
 
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        
+        .input-label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+        
         .path-input {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -217,13 +230,34 @@ const pageHTML = `
             background-color: white;
             color: var(--gray-900);
             transition: all 0.2s ease;
-            margin-bottom: 1rem;
         }
-
+        
         .path-input:focus {
             outline: none;
             border-color: var(--blue-primary);
             box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+        
+        .dir-button {
+            background-color: var(--gray-100);
+            color: var(--gray-800);
+            border: 1px solid var(--gray-300);
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 0.5rem;
+        }
+        
+        .dir-button:hover {
+            background-color: var(--gray-200);
+        }
+        
+        .dir-help {
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            margin-top: 0.25rem;
         }
 
         .search-options {
@@ -509,6 +543,19 @@ const pageHTML = `
                         class="search-input" 
                         autocomplete="off"
                     />
+                </div>
+                
+                <div class="input-group">
+                    <label for="path" class="input-label">検索対象ディレクトリ（空白の場合はカレントディレクトリ）:</label>
+                    <input 
+                        type="text" 
+                        id="path" 
+                        name="path" 
+                        value="{{.Path}}" 
+                        placeholder="/path/to/search" 
+                        class="path-input"
+                    />
+                    <p class="dir-help">例: /Users/username/projects/myapp または相対パス ./src</p>
                 </div>
                 
                 <div class="search-options">
