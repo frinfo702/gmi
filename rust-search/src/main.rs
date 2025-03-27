@@ -1,26 +1,69 @@
-use anyhow::{Context, Result};
-use std::io::BufRead;
-use std::{env, fs, io, path::Path};
+use anyhow::Result;
+use std::{env, fs, path::Path};
 use walkdir::WalkDir;
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
 
-    if args.len() < 2 {
-        println!("使用法: {} <検索クエリ> [--fuzzy]", args[0]);
-        return Ok(());
+    let mut query = None;
+    let mut target_dir = "."; // デフォルトはカレントディレクトリ
+    let mut fuzzy_mode = false;
+    let mut arg_index = 1;
+    while arg_index < args.len() {
+        match args[arg_index].as_str() {
+            "--dir" | "-d" => {
+                arg_index += 1;
+                if arg_index < args.len() {
+                    target_dir = &args[arg_index];
+                } else {
+                    eprintln!("エラー: --dir オプションにはディレクトリパスが必要です。");
+                    std::process::exit(1);
+                }
+            }
+            "--fuzzy" | "-f" => {
+                fuzzy_mode = true;
+            }
+            _ => {
+                if query.is_none() {
+                    query = Some(&args[arg_index]);
+                } else {
+                    eprintln!(
+                        "エラー: 不明な引数または複数のクエリが指定されました: {}",
+                        args[arg_index]
+                    );
+                    print_usage(&args[0]);
+                    std::process::exit(1);
+                }
+            }
+        }
+        arg_index += 1;
     }
 
-    let query = &args[1];
-    let fuzzy_mode = args.len() > 2 && args[2] == "--fuzzy";
+    if query.is_none() {
+        print_usage(&args[0]);
+        std::process::exit(1);
+    }
+    let query = query.unwrap();
 
-    // カレントディレクトリを検索対象とする
-    let target_dir = ".";
-
-    println!("検索結果:");
+    println!(
+        "検索結果 (ディレクトリ: {}, クエリ: {}, Fuzzy: {}):",
+        target_dir, query, fuzzy_mode
+    );
     search_in_directory(target_dir, query, fuzzy_mode)?;
 
     Ok(())
+}
+
+fn print_usage(program_name: &str) {
+    println!(
+        "使用法: {} <検索クエリ> [-d <ディレクトリ>] [-f | --fuzzy]",
+        program_name
+    );
+    println!("  <検索クエリ>: 検索する文字列");
+    println!(
+        "  -d, --dir <ディレクトリ>: 検索対象のディレクトリ (デフォルト: カレントディレクトリ)"
+    );
+    println!("  -f, --fuzzy: ファジー検索を有効にする");
 }
 
 fn search_in_directory(dir: &str, query: &str, fuzzy_mode: bool) -> Result<()> {

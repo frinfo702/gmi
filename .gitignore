@@ -1,5 +1,42 @@
-# Rust build artifacts
-rust-search/target/
-
-.DS_Store
 .env
+
+# Rust関連
+/rust-search/target/
+**/*.rs.bk
+Cargo.lock
+
+# Go関連
+/go-server/bin/
+/go-server/pkg/
+/go-server/vendor/
+
+# macOS関連
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ユーザー設定
+$HOME/.rustysearch/
+test-workspace/.rustysearch
+
+# ビルド成果物
+**/debug/
+**/release/
+
+# ログファイル
+*.log
+/logs/
+
+# エディタ・IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# その他
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
