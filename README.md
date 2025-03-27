@@ -1,6 +1,6 @@
-# RustySearch
+# Fixer
 
-RustySearch is a high-performance, scalable file search engine project that leverages the strengths of both Rust and Go to provide efficient search capabilities.
+Fixer is a high-performance, scalable file search engine project that leverages the strengths of both Rust and Go to provide efficient search capabilities.
 
 ## 🎯 Project Goals
 
@@ -34,8 +34,8 @@ The project consists of two main components:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/RustySearch.git
-   cd RustySearch
+   git clone https://github.com/yourusername/fixer.git
+   cd fixer
    ```
 
 2. Build the Rust component:

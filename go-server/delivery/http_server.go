@@ -87,7 +87,7 @@ const pageHTML = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RustySearch - Code Search</title>
+    <title>Fixer - Code Search</title>
     <style>
         :root {
             /* Google-inspired color palette */

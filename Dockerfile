@@ -9,13 +9,13 @@ FROM golang:1.22-alpine AS builder-go
 WORKDIR /app
 COPY go-server/ ./go-server/
 # builder-rust から Rust バイナリを go-server にコピー
-COPY --from=builder-rust /app/rust-search/target/release/rust-search ./go-server/rust-search
-RUN cd go-server && go build -o rustysearch ./cmd
+COPY --from=builder-rust /app/rust-search/target/release/fixer ./go-server/fixer
+RUN cd go-server && go build -o fixer ./cmd
 
 # Stage 3: 実行用イメージ
 FROM debian:stable-slim
 WORKDIR /app
-COPY --from=builder-go /app/go-server/rustysearch ./
-COPY --from=builder-go /app/go-server/rust-search ./
+COPY --from=builder-go /app/go-server/fixer ./
+COPY --from=builder-go /app/go-server/fixer ./
 EXPOSE 8080
-ENTRYPOINT ["./rustysearch"]
+ENTRYPOINT ["./fixer"]

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "RustySearch MVPの起動スクリプト"
+echo "Fixer MVPの起動スクリプト"
 echo "==============================="
 
 # 現在のディレクトリを基準にパスを設定

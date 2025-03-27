@@ -17,8 +17,8 @@ Cargo.lock
 ._*
 
 # ユーザー設定
-$HOME/.rustysearch/
-test-workspace/.rustysearch
+$HOME/.fixer/
+test-workspace/.fixer
 
 # ビルド成果物
 **/debug/

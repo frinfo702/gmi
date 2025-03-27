@@ -13,10 +13,10 @@ import (
 
 func main() {
 	log.SetOutput(os.Stdout)
-	log.SetPrefix("[RustySearch] ")
+	log.SetPrefix("[Fixer] ")
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	log.Println("Starting RustySearch server...")
+	log.Println("Starting Fixer server...")
 
 	binaryPath := os.Getenv("SEARCH_ROOT")
 	if binaryPath == "" {
