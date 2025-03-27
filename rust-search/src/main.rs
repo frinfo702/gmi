@@ -1,25 +1,23 @@
-use anyhow::{Context, Result};
-use std::io::BufRead;
-use std::{env, fs, io, path::Path};
+use anyhow::Result;
+use std::{env, fs, path::Path};
 use walkdir::WalkDir;
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
 
-    // 引数の解析を改善
     let mut query = None;
     let mut target_dir = "."; // デフォルトはカレントディレクトリ
     let mut fuzzy_mode = false;
-    let mut i = 1;
-    while i < args.len() {
-        match args[i].as_str() {
+    let mut arg_index = 1;
+    while arg_index < args.len() {
+        match args[arg_index].as_str() {
             "--dir" | "-d" => {
-                i += 1;
-                if i < args.len() {
-                    target_dir = &args[i];
+                arg_index += 1;
+                if arg_index < args.len() {
+                    target_dir = &args[arg_index];
                 } else {
                     eprintln!("エラー: --dir オプションにはディレクトリパスが必要です。");
-                    return Ok(()); // またはエラー終了
+                    return Ok(());
                 }
             }
             "--fuzzy" | "-f" => {
@@ -27,15 +25,18 @@ fn main() -> Result<()> {
             }
             _ => {
                 if query.is_none() {
-                    query = Some(&args[i]);
+                    query = Some(&args[arg_index]);
                 } else {
-                    eprintln!("エラー: 不明な引数または複数のクエリが指定されました: {}", args[i]);
+                    eprintln!(
+                        "エラー: 不明な引数または複数のクエリが指定されました: {}",
+                        args[arg_index]
+                    );
                     print_usage(&args[0]);
-                    return Ok(()); // またはエラー終了
+                    return Ok(());
                 }
             }
         }
-        i += 1;
+        arg_index += 1;
     }
 
     if query.is_none() {
@@ -44,16 +45,24 @@ fn main() -> Result<()> {
     }
     let query = query.unwrap();
 
-    println!("検索結果 (ディレクトリ: {}, クエリ: {}, Fuzzy: {}):", target_dir, query, fuzzy_mode);
+    println!(
+        "検索結果 (ディレクトリ: {}, クエリ: {}, Fuzzy: {}):",
+        target_dir, query, fuzzy_mode
+    );
     search_in_directory(target_dir, query, fuzzy_mode)?;
 
     Ok(())
 }
 
 fn print_usage(program_name: &str) {
-    println!("使用法: {} <検索クエリ> [-d <ディレクトリ>] [-f | --fuzzy]", program_name);
+    println!(
+        "使用法: {} <検索クエリ> [-d <ディレクトリ>] [-f | --fuzzy]",
+        program_name
+    );
     println!("  <検索クエリ>: 検索する文字列");
-    println!("  -d, --dir <ディレクトリ>: 検索対象のディレクトリ (デフォルト: カレントディレクトリ)");
+    println!(
+        "  -d, --dir <ディレクトリ>: 検索対象のディレクトリ (デフォルト: カレントディレクトリ)"
+    );
     println!("  -f, --fuzzy: ファジー検索を有効にする");
 }
 
