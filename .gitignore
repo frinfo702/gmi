@@ -4,11 +4,15 @@
 /rust-search/target/
 **/*.rs.bk
 Cargo.lock
+/rust-search/.DS_Store
 
 # Go関連
 /go-server/bin/
 /go-server/pkg/
 /go-server/vendor/
+/go-server/.DS_Store
+/go-server/.env
+
 
 # macOS関連
 .DS_Store
