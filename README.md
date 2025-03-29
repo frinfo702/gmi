@@ -38,23 +38,9 @@ The project consists of two main components:
    cd fixer
    ```
 
-2. Build the Rust component:
-   ```bash
-   cd rust-search
-   cargo build --release
-   ```
-
-3. Start the Go server:
-   ```bash
-   cd ../go-server/cmd
-   go mod tidy
-   go run main.go
-   ```
-
-### Docker Deployment
-
+2. Build and Start server
 ```bash
-docker-compose up
+./run.sh
 ```
 
 ## 🔍 Key Features
@@ -78,6 +64,4 @@ docker-compose up
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
