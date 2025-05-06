@@ -34,7 +34,7 @@ func printUsage() {
 	fmt.Println("Usage: go_my_index <command> [arguments]")
 	fmt.Println("Commands:")
 	fmt.Println("  index -dir <target_directory> [-out <index_file_path>]")
-	fmt.Println("  search -index <index_file_path> -q <query>")
+	fmt.Println("  search -index <index_file_path> -q <query> [-mode <and|or>]")
 }
 
 func handleIndexCommand() {
@@ -76,6 +76,7 @@ func handleSearchCommand() {
 	searchCmd := flag.NewFlagSet("search", flag.ExitOnError)
 	indexPath := searchCmd.String("index", "myindex.idx", "Path to the index file")
 	query := searchCmd.String("q", "", "Search query (required)")
+	mode := searchCmd.String("mode", "and", "Search mode: 'and' or 'or' (default: 'and')") // -mode フラグ追加
 	searchCmd.Parse(os.Args[2:])
 
 	if *query == "" {
@@ -83,8 +84,15 @@ func handleSearchCommand() {
 		searchCmd.Usage()
 		os.Exit(1)
 	}
+	// modeのバリデーション
+	normalizedMode := strings.ToLower(*mode)
+	if normalizedMode != "and" && normalizedMode != "or" {
+		fmt.Println("Error: Invalid search mode. Must be 'and' or 'or'.")
+		searchCmd.Usage()
+		os.Exit(1)
+	}
 
-	fmt.Printf("Search command: indexPath='%s', query='%s'\n", *indexPath, *query)
+	fmt.Printf("Search command: indexPath='%s', query='%s', mode='%s'\n", *indexPath, *query, normalizedMode)
 	idx, err := store.LoadIndex(*indexPath)
 	if err != nil {
 		fmt.Printf("Error loading index for search: %v\n", err)
@@ -95,14 +103,14 @@ func handleSearchCommand() {
 		return
 	}
 
-	searchResults := searcher.Search(idx, *query)
+	searchResults := searcher.Search(idx, *query, normalizedMode) // mode を渡す
 
 	if len(searchResults) == 0 {
 		fmt.Println("No documents found matching your query.")
 		return
 	}
 
-	fmt.Printf("Found %d document(s) matching all terms:\n", len(searchResults))
+	fmt.Printf("Found %d document(s) matching query (mode: %s):\n", len(searchResults), normalizedMode)
 	for i, res := range searchResults {
 		fmt.Printf("%d. File: %s (DocID: %d)\n", i+1, res.Document.Path, res.Document.ID)
 
