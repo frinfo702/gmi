@@ -13,19 +13,21 @@ import (
 )
 
 // processFileResultはワーカーgoroutineからの処理結果を格納
-type processdFileResult struct {
-	filePath string
-	tokens   []string
-	err      error
+type processedFileResult struct {
+	filePath   string
+	tokens     []string
+	totalWords int
+	err        error
 }
 
 func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
-	fmt.Printf("Starting to build index for directory: %s\n", rootDirPath)
+	// ... (関数の前半部分は変更なし) ...
+	fmt.Printf("Starting to build index for directory (concurrently): %s\n", rootDirPath)
 
 	var filePaths []string
 	err := filepath.WalkDir(rootDirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			fmt.Printf("Error accessing path %q: %v\n", path, err)
+			fmt.Printf("Error accessing path %q during WalkDir: %v\n", path, err)
 			return err
 		}
 		lowerName := strings.ToLower(d.Name())
@@ -40,7 +42,7 @@ func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 	}
 
 	if len(filePaths) == 0 {
-		fmt.Println("No file found to index")
+		fmt.Println("No files found to index.")
 		return nil
 	}
 	fmt.Printf("Found %d files to process.\n", len(filePaths))
@@ -49,10 +51,10 @@ func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 	if numWorkers > len(filePaths) {
 		numWorkers = len(filePaths)
 	}
-	fmt.Printf("Using %d workers goroutines.\n", numWorkers)
+	fmt.Printf("Using %d worker goroutines.\n", numWorkers)
 
 	jobs := make(chan string, len(filePaths))
-	results := make(chan processdFileResult, len(filePaths))
+	results := make(chan processedFileResult, len(filePaths))
 
 	var wg sync.WaitGroup
 
@@ -60,17 +62,21 @@ func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
-			fmt.Printf("Workers %d started\n", workerID)
 			for filePath := range jobs {
 				content, err := os.ReadFile(filePath)
 				if err != nil {
-					results <- processdFileResult{filePath: filePath, err: fmt.Errorf("worker %d error reading file %q: %w", workerID, filePath, err)}
+					results <- processedFileResult{filePath: filePath, err: fmt.Errorf("worker %d error reading file %q: %w", workerID, filePath, err)}
 					continue
 				}
 				tokens := tokenizer.Tokenize(string(content))
-				results <- processdFileResult{filePath: filePath, tokens: tokens, err: nil}
+				validTokensCount := 0
+				for _, t := range tokens {
+					if t != "" {
+						validTokensCount++
+					}
+				}
+				results <- processedFileResult{filePath: filePath, tokens: tokens, totalWords: validTokensCount, err: nil} 
 			}
-			fmt.Printf("Worker %d finishd", workerID)
 		}(w)
 	}
 
@@ -88,7 +94,7 @@ func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 		for result := range results {
 			processedCount++
 			if result.err != nil {
-				fmt.Print("Error processing file %s: %v\n", result.filePath, result.err)
+				fmt.Printf("Error processing file %s: %v\n", result.filePath, result.err)
 				continue
 			}
 
@@ -100,28 +106,26 @@ func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 					break
 				}
 			}
+
 			if existingDocID != -1 {
 				docID = existingDocID
-				// fmt.Printf("  File %s (DocID %d) will be updated.\n", result.filePath, docID)
+				currentDoc := idx.Docs[docID]
+				currentDoc.TotalWords = result.totalWords
+				idx.Docs[docID] = currentDoc
 			} else {
 				docID = idx.NextDocID
-				idx.Docs[docID] = Document{ID: docID, Path: result.filePath}
+				idx.Docs[docID] = Document{ID: docID, Path: result.filePath, TotalWords: result.totalWords} 
 				idx.NextDocID++
 			}
-			addTokensToInvertedIndex(idx, docID, result.tokens)
-			if processedCount%100 == 0 { // 100ファイル処理するごとに進捗表示
-				fmt.Printf("Collected results for %d/%d files...\n", processedCount, len(filePaths))
-			}
+			addTokensToInvertedIndex(idx, docID, result.tokens) 
 		}
-		fmt.Println("All results collected.")
 	}()
 
 	wg.Wait()
 	close(results)
-
 	resultWg.Wait()
 
-	fmt.Println("Index building process (concurrent file processing and index construction) completed.")
+	fmt.Println("Index building process completed.")
 	return nil
 }
 
@@ -136,19 +140,20 @@ func addTokensToInvertedIndex(idx *InvertedIndex, docID int, tokens []string) {
 	}
 
 	for token, positions := range tokenPositionsInDoc {
+		frequency := len(positions) 
 		postingsList := idx.Index[token]
-
 		foundPostingForDoc := false
 		for i, p := range postingsList {
 			if p.DocID == docID {
 				postingsList[i].Positions = positions
+				postingsList[i].Frequency = frequency 
 				foundPostingForDoc = true
 				break
 			}
 		}
 
 		if !foundPostingForDoc {
-			newPosting := Posting{DocID: docID, Positions: positions}
+			newPosting := Posting{DocID: docID, Positions: positions, Frequency: frequency} 
 			idx.Index[token] = append(postingsList, newPosting)
 		}
 	}
