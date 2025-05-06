@@ -7,6 +7,7 @@ import (
 	"gmi/searcher"
 	"gmi/store"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -101,15 +102,18 @@ func handleSearchCommand() {
 		return
 	}
 
-	fmt.Printf("Found %d document(s):\n", len(searchResults))
+	fmt.Printf("Found %d document(s) matching all terms:\n", len(searchResults))
 	for i, res := range searchResults {
 		fmt.Printf("%d. File: %s (DocID: %d)\n", i+1, res.Document.Path, res.Document.ID)
-		if len(res.Positions) > 0 {
-			displayPositions := res.Positions
-			if len(displayPositions) > 5 {
-				displayPositions = displayPositions[:5]
+
+		var termDetails []string
+		for term, positions := range res.QueryTermPositions {
+			displayPositions := positions
+			if len(displayPositions) > 3 {
+				displayPositions = displayPositions[:3]
 			}
-			fmt.Printf("   Query term positions in document: %v\n", displayPositions)
+			termDetails = append(termDetails, fmt.Sprintf("'%s' at %v", term, displayPositions))
 		}
+		fmt.Printf("   Terms found: %s\n", strings.Join(termDetails, "; "))
 	}
 }
