@@ -1,4 +1,3 @@
-// go-my-index/store/store.go
 package store
 
 import (
@@ -31,8 +30,6 @@ func LoadIndex(filePath string) (*indexer.InvertedIndex, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// ファイルが存在しない場合は、新しい空のインデックスを返すか、エラーとする
-			// ここでは新しいインデックスを返すことにする (初回起動時など)
 			fmt.Printf("Index file %s not found, creating new index.\n", filePath)
 			return indexer.NewInvertedIndex(), nil
 		}

@@ -1,13 +1,12 @@
-// go-my-index/main.go
 package main
 
 import (
 	"flag"
 	"fmt"
 	"gmi/indexer"
+	"gmi/searcher"
 	"gmi/store"
 	"os"
-	// "go-my-index/searcher" // 後で使う
 )
 
 func main() {
@@ -51,12 +50,9 @@ func handleIndexCommand() {
 
 	fmt.Printf("Index command: targetDir='%s', indexPath='%s'\n", *targetDir, *indexPath)
 
-	// 既存のインデックスをロードするか、新規作成
 	idx, err := store.LoadIndex(*indexPath)
-	if err != nil && !os.IsNotExist(err) { // ファイルが存在しないエラー以外は致命的
+	if err != nil && !os.IsNotExist(err) {
 		fmt.Printf("Error loading existing index: %v\n", err)
-		// os.Exit(1) // ここでは処理を継続し、新しいインデックスを作成する試みをする
-		// 代わりに新しいインデックスを作成
 		fmt.Println("Attempting to create a new index.")
 		idx = indexer.NewInvertedIndex()
 	}
@@ -93,14 +89,27 @@ func handleSearchCommand() {
 		fmt.Printf("Error loading index for search: %v\n", err)
 		os.Exit(1)
 	}
-	if len(idx.Docs) == 0 && idx.NextDocID == 0 { // 簡易的な空インデックスチェック
+	if len(idx.Docs) == 0 && idx.NextDocID == 0 {
 		fmt.Println("The index is empty or not found. Please build the index first using the 'index' command.")
 		return
 	}
 
-	// TODO: Implement search logic using idx and query
-	// searchResult := searcher.Search(idx, *query)
-	// fmt.Println("Search results:", searchResult)
-	fmt.Println("TODO: Implement search logic here.")
-	fmt.Printf("Loaded index contains %d documents and %d unique tokens.\n", len(idx.Docs), len(idx.Index))
+	searchResults := searcher.Search(idx, *query)
+
+	if len(searchResults) == 0 {
+		fmt.Println("No documents found matching your query.")
+		return
+	}
+
+	fmt.Printf("Found %d document(s):\n", len(searchResults))
+	for i, res := range searchResults {
+		fmt.Printf("%d. File: %s (DocID: %d)\n", i+1, res.Document.Path, res.Document.ID)
+		if len(res.Positions) > 0 {
+			displayPositions := res.Positions
+			if len(displayPositions) > 5 {
+				displayPositions = displayPositions[:5]
+			}
+			fmt.Printf("   Query term positions in document: %v\n", displayPositions)
+		}
+	}
 }
