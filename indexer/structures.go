@@ -1,10 +1,13 @@
 package indexer
 
+import "time"
+
 // Document は検索対象のドキュメントを表します。
 type Document struct {
-	ID         int    // ドキュメントの一意なID
-	Path       string // ドキュメントのファイルパス
-	TotalWords int    // ドキュメント内の総単語数(トークン数)
+	ID           int       // ドキュメントの一意なID
+	Path         string    // ドキュメントのファイルパス
+	TotalWords   int       // ドキュメント内の総単語数(トークン数)
+	LastModified time.Time // ファイルの最終更新日時
 }
 
 // Posting は転置インデックスのポスティングリストの要素です。

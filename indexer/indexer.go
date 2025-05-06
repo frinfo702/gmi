@@ -10,21 +10,27 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"time"
 )
 
 // processFileResultはワーカーgoroutineからの処理結果を格納
 type processedFileResult struct {
-	filePath   string
-	tokens     []string
-	totalWords int
-	err        error
+	filePath     string
+	tokens       []string
+	totalWords   int
+	lastModified time.Time
+	err          error
 }
 
-func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
-	// ... (関数の前半部分は変更なし) ...
-	fmt.Printf("Starting to build index for directory (concurrently): %s\n", rootDirPath)
+func BuildIndex(rootDirPath string, oldIdx *InvertedIndex) (*InvertedIndex, error) {
+	fmt.Printf("Starting to build/update index for directory (concurrently, diff update): %s\n", rootDirPath)
 
-	var filePaths []string
+	newIdx := NewInvertedIndex()
+	if oldIdx != nil && oldIdx.NextDocID > 0 {
+		newIdx.NextDocID = oldIdx.NextDocID
+	}
+
+	currentFileSystemFiles := make(map[string]fs.FileInfo) // path -> FileInfo
 	err := filepath.WalkDir(rootDirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			fmt.Printf("Error accessing path %q during WalkDir: %v\n", path, err)
@@ -32,30 +38,72 @@ func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 		}
 		lowerName := strings.ToLower(d.Name())
 		if !d.IsDir() && (strings.HasSuffix(lowerName, ".txt") || strings.HasSuffix(lowerName, ".md")) {
-			filePaths = append(filePaths, path)
+			info, statErr := d.Info()
+			if statErr != nil {
+				fmt.Printf("Error getting FileInfo for %s: %v\n", path, statErr)
+				return nil
+			}
+			currentFileSystemFiles[path] = info
 		}
 		return nil
 	})
-
 	if err != nil {
-		return fmt.Errorf("error walking the path %q to gather files: %w", rootDirPath, err)
+		return nil, fmt.Errorf("error walking the path %q to gather files: %w", rootDirPath, err)
 	}
 
-	if len(filePaths) == 0 {
-		fmt.Println("No files found to index.")
-		return nil
+	if len(currentFileSystemFiles) == 0 {
+		fmt.Println("No files found in the target directory. Returning an empty index.")
+		return NewInvertedIndex(), nil
 	}
-	fmt.Printf("Found %d files to process.\n", len(filePaths))
+	fmt.Printf("Found %d files in current file system.\n", len(currentFileSystemFiles))
+
+	var filesToProcess []string
+	oldDocsByPath := make(map[string]Document)
+	if oldIdx != nil {
+		for _, doc := range oldIdx.Docs {
+			oldDocsByPath[doc.Path] = doc
+		}
+	}
+
+	for path, fileInfo := range currentFileSystemFiles {
+		oldDoc, existsInOldIndex := oldDocsByPath[path]
+		if existsInOldIndex && oldDoc.LastModified.Equal(fileInfo.ModTime()) {
+			newIdx.Docs[oldDoc.ID] = oldDoc
+			filesToProcess = append(filesToProcess, path)
+		} else {
+			if existsInOldIndex {
+				fmt.Printf("File %s changed (OldTime: %s, NewTime: %s).\n", path, oldDoc.LastModified, fileInfo.ModTime())
+			} else {
+				fmt.Printf("New file %s found.\n", path)
+			}
+			filesToProcess = append(filesToProcess, path)
+		}
+	}
+
+	if oldIdx != nil {
+		for path := range oldDocsByPath {
+			if _, existsInCurrentFS := currentFileSystemFiles[path]; !existsInCurrentFS {
+				fmt.Printf("File %s was deleted.\n", path)
+			}
+		}
+	}
+
+	if len(filesToProcess) == 0 {
+		fmt.Println("No files to process (all files unchanged or directory empty). Returning old index (or new if old was nil).")
+		if oldIdx != nil && len(currentFileSystemFiles) > 0 {
+			return oldIdx, nil
+		}
+		return newIdx, nil
+	}
+	fmt.Printf("%d files will be (re)processed.\n", len(filesToProcess))
 
 	numWorkers := runtime.NumCPU()
-	if numWorkers > len(filePaths) {
-		numWorkers = len(filePaths)
+	if numWorkers > len(filesToProcess) {
+		numWorkers = len(filesToProcess)
 	}
-	fmt.Printf("Using %d worker goroutines.\n", numWorkers)
 
-	jobs := make(chan string, len(filePaths))
-	results := make(chan processedFileResult, len(filePaths))
-
+	jobs := make(chan string, len(filesToProcess))
+	results := make(chan processedFileResult, len(filesToProcess))
 	var wg sync.WaitGroup
 
 	for w := 0; w < numWorkers; w++ {
@@ -63,6 +111,7 @@ func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 		go func(workerID int) {
 			defer wg.Done()
 			for filePath := range jobs {
+				fileInfo := currentFileSystemFiles[filePath]
 				content, err := os.ReadFile(filePath)
 				if err != nil {
 					results <- processedFileResult{filePath: filePath, err: fmt.Errorf("worker %d error reading file %q: %w", workerID, filePath, err)}
@@ -75,19 +124,18 @@ func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 						validTokensCount++
 					}
 				}
-				results <- processedFileResult{filePath: filePath, tokens: tokens, totalWords: validTokensCount, err: nil} 
+				results <- processedFileResult{filePath: filePath, tokens: tokens, totalWords: validTokensCount, lastModified: fileInfo.ModTime(), err: nil}
 			}
 		}(w)
 	}
 
-	for _, fp := range filePaths {
+	for _, fp := range filesToProcess {
 		jobs <- fp
 	}
 	close(jobs)
 
 	var resultWg sync.WaitGroup
 	resultWg.Add(1)
-
 	go func() {
 		defer resultWg.Done()
 		processedCount := 0
@@ -99,25 +147,17 @@ func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 			}
 
 			var docID int
-			existingDocID := -1
-			for id, doc := range idx.Docs {
-				if doc.Path == result.filePath {
-					existingDocID = id
-					break
-				}
+			oldDoc, pathExistedInOld := oldDocsByPath[result.filePath]
+			if pathExistedInOld {
+				docID = oldDoc.ID
+				newIdx.Docs[docID] = Document{ID: docID, Path: result.filePath, TotalWords: result.totalWords, LastModified: result.lastModified}
+			} else {
+				docID = newIdx.NextDocID
+				newIdx.Docs[docID] = Document{ID: docID, Path: result.filePath, TotalWords: result.totalWords, LastModified: result.lastModified}
+				newIdx.NextDocID++
 			}
 
-			if existingDocID != -1 {
-				docID = existingDocID
-				currentDoc := idx.Docs[docID]
-				currentDoc.TotalWords = result.totalWords
-				idx.Docs[docID] = currentDoc
-			} else {
-				docID = idx.NextDocID
-				idx.Docs[docID] = Document{ID: docID, Path: result.filePath, TotalWords: result.totalWords} 
-				idx.NextDocID++
-			}
-			addTokensToInvertedIndex(idx, docID, result.tokens) 
+			addTokensToInvertedIndex(newIdx, docID, result.tokens)
 		}
 	}()
 
@@ -125,11 +165,10 @@ func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 	close(results)
 	resultWg.Wait()
 
-	fmt.Println("Index building process completed.")
-	return nil
+	fmt.Println("Index update process completed.")
+	return newIdx, nil
 }
 
-// addTokensToInvertedIndex はドキュメントのトークンリストを転置インデックスに追加します。
 func addTokensToInvertedIndex(idx *InvertedIndex, docID int, tokens []string) {
 	tokenPositionsInDoc := make(map[string][]int)
 	for i, token := range tokens {
@@ -140,20 +179,20 @@ func addTokensToInvertedIndex(idx *InvertedIndex, docID int, tokens []string) {
 	}
 
 	for token, positions := range tokenPositionsInDoc {
-		frequency := len(positions) 
+		frequency := len(positions)
 		postingsList := idx.Index[token]
 		foundPostingForDoc := false
 		for i, p := range postingsList {
 			if p.DocID == docID {
 				postingsList[i].Positions = positions
-				postingsList[i].Frequency = frequency 
+				postingsList[i].Frequency = frequency
 				foundPostingForDoc = true
 				break
 			}
 		}
 
 		if !foundPostingForDoc {
-			newPosting := Posting{DocID: docID, Positions: positions, Frequency: frequency} 
+			newPosting := Posting{DocID: docID, Positions: positions, Frequency: frequency}
 			idx.Index[token] = append(postingsList, newPosting)
 		}
 	}
