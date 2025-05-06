@@ -2,13 +2,15 @@ package indexer
 
 // Document は検索対象のドキュメントを表します。
 type Document struct {
-	ID   int    // ドキュメントの一意なID
-	Path string // ドキュメントのファイルパス
+	ID         int    // ドキュメントの一意なID
+	Path       string // ドキュメントのファイルパス
+	TotalWords int    // ドキュメント内の総単語数(トークン数)
 }
 
 // Posting は転置インデックスのポスティングリストの要素です。
 type Posting struct {
 	DocID     int   // ドキュメントID
+	Frequency int   // 単語ドキュメント内での出現回数
 	Positions []int // 単語の出現位置 (ドキュメント内のトークンindex)
 }
 
