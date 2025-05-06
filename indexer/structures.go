@@ -1,4 +1,3 @@
-// go-my-index/indexer/structures.go
 package indexer
 
 // Document は検索対象のドキュメントを表します。

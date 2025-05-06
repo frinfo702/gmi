@@ -10,37 +10,47 @@ import (
 	"strings"
 )
 
-// BuildIndex は指定されたディレクトリを走査し、転置インデックスを構築します。
-// (ToDo 6 の中核部分。今回はファイル走査、読み込み、トークナイズまでを行い、
-//
-//	インデックス構造体への格納は次のステップで行います。)
 func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 	fmt.Printf("Starting to build index for directory: %s\n", rootDirPath)
 
 	err := filepath.WalkDir(rootDirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			fmt.Printf("Error accessing path %q: %v\n", path, err)
-			return err // エラーが発生したら探索を中断しない場合は `nil` を返す
+			return err
 		}
-		if !d.IsDir() && (strings.HasSuffix(d.Name(), ".txt") || strings.HasSuffix(d.Name(), ".md")) {
+		// 対象ファイルの判定を改善 (大文字・小文字を区別しない)
+		lowerName := strings.ToLower(d.Name())
+		if !d.IsDir() && (strings.HasSuffix(lowerName, ".txt") || strings.HasSuffix(lowerName, ".md")) {
 			fmt.Printf("Processing file: %s\n", path)
 
 			content, err := os.ReadFile(path)
 			if err != nil {
 				fmt.Printf("Error reading file %q: %v\n", path, err)
-				return nil // このファイルはスキップして次に進む
+				return nil // このファイルはスキップ
 			}
 
-			// ドキュメントをインデックスに追加
+			// 既にこのパスがインデックスされているかチェック (重複インデックス防止)
+			// より厳密には、ファイルの内容が同じかどうかで判断すべきだが、ここではパスで簡易的に判断
+			var existingDocID = -1
+			for id, doc := range idx.Docs {
+				if doc.Path == path {
+					existingDocID = id
+					break
+				}
+			}
+
 			docID := idx.NextDocID
-			idx.Docs[docID] = Document{ID: docID, Path: path}
-			idx.NextDocID++
+			if existingDocID != -1 {
+				docID = existingDocID
+				fmt.Printf("  File %s already partially indexed as DocID %d. Will update.\n", path, docID)
+			} else {
+				idx.Docs[docID] = Document{ID: docID, Path: path}
+				idx.NextDocID++
+			}
 
 			tokens := tokenizer.Tokenize(string(content))
-			fmt.Printf("  Tokens (%s): %v\n", path, tokens)
+			// fmt.Printf("  Tokens (%s): %v\n", path, tokens) // ログが多いのでコメントアウト
 
-			// ここで tokens と docID を使って転置インデックス (idx.Index) を更新する (ToDo 6 の残り)
-			// (この部分は次のステップで実装します)
 			addTokensToInvertedIndex(idx, docID, tokens)
 		}
 		return nil
@@ -50,38 +60,35 @@ func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 		return fmt.Errorf("error walking the path %q: %w", rootDirPath, err)
 	}
 
-	fmt.Println("Index building process (file scan, tokenize) completed.")
+	fmt.Println("Index building process (file scan, tokenize, index construction) completed.")
 	return nil
 }
 
 // addTokensToInvertedIndex はドキュメントのトークンリストを転置インデックスに追加します。
-// (ToDo 6 の中核部分、この関数を次のステップで詳細に実装します)
 func addTokensToInvertedIndex(idx *InvertedIndex, docID int, tokens []string) {
-	tokenPositions := make(map[string][]int)
+	tokenPositionsInDoc := make(map[string][]int)
 	for i, token := range tokens {
-		tokenPositions[token] = append(tokenPositions[token], i)
+		if token == "" {
+			continue
+		}
+		tokenPositionsInDoc[token] = append(tokenPositionsInDoc[token], i)
 	}
 
-	for token, positions := range tokenPositions {
-		// 既存のPostingリストを取得、または新規作成
-		postings := idx.Index[token]
+	for token, positions := range tokenPositionsInDoc {
+		postingsList := idx.Index[token]
 
-		// このドキュメントに関するPostingが存在するか確認
-		found := false
-		for i, p := range postings {
+		foundPostingForDoc := false
+		for i, p := range postingsList {
 			if p.DocID == docID {
-				// 通常、同じドキュメントを2回インデックスすることはないはずだが、念のため
-				// もし既存ならポジションを追加することもできるが、ここでは単純に上書き（またはエラー）
-				// 今回のロジックでは1ドキュメント1回処理なので、ここには到達しない想定
-				postings[i].Positions = append(postings[i].Positions, positions...)
-				found = true
+				postingsList[i].Positions = positions
+				foundPostingForDoc = true
 				break
 			}
 		}
 
-		if !found {
+		if !foundPostingForDoc {
 			newPosting := Posting{DocID: docID, Positions: positions}
-			idx.Index[token] = append(postings, newPosting)
+			idx.Index[token] = append(postingsList, newPosting)
 		}
 	}
 }
