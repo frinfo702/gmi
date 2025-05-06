@@ -7,6 +7,7 @@ import (
 	"gmi/searcher"
 	"gmi/store"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -117,13 +118,35 @@ func handleSearchCommand() {
 		fmt.Printf("%d. File: %s (DocID: %d, Score: %.4f)\n", i+1, res.Document.Path, res.Document.ID, res.Score)
 
 		var termDetails []string
-		for term, positions := range res.QueryTermPositions {
+		foundTermsInDoc := []string{}
+		for term := range res.QueryTermPositions {
+			foundTermsInDoc = append(foundTermsInDoc, term)
+		}
+		sort.Strings(foundTermsInDoc)
+
+		for _, term := range foundTermsInDoc {
+			positions := res.QueryTermPositions[term]
 			displayPositions := positions
 			if len(displayPositions) > 3 {
 				displayPositions = displayPositions[:3]
 			}
 			termDetails = append(termDetails, fmt.Sprintf("'%s' at %v", term, displayPositions))
 		}
-		fmt.Printf("   Terms found: %s (TotalWordsInDoc: %d)\n", strings.Join(termDetails, "; "), res.Document.TotalWords)
+		if len(termDetails) > 0 {
+			fmt.Printf("   Terms: %s (TotalWordsInDoc: %d)\n", strings.Join(termDetails, "; "), res.Document.TotalWords)
+		} else {
+			fmt.Printf("   (No specific term positions for this combined result, TotalWordsInDoc: %d)\n", res.Document.TotalWords)
+		}
+
+		if len(res.Snippets) > 0 {
+			for _, snippet := range res.Snippets {
+				fmt.Printf("   Snippet: %s\n", snippet)
+			}
+		} else {
+			fmt.Println("   Snippet: [Not available]")
+		}
+		if i < len(searchResults)-1 {
+			fmt.Println("   ---")
+		}
 	}
 }
