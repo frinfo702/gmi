@@ -7,60 +7,121 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 )
+
+// processFileResultはワーカーgoroutineからの処理結果を格納
+type processdFileResult struct {
+	filePath string
+	tokens   []string
+	err      error
+}
 
 func BuildIndex(rootDirPath string, idx *InvertedIndex) error {
 	fmt.Printf("Starting to build index for directory: %s\n", rootDirPath)
 
+	var filePaths []string
 	err := filepath.WalkDir(rootDirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			fmt.Printf("Error accessing path %q: %v\n", path, err)
 			return err
 		}
-		// 対象ファイルの判定を改善 (大文字・小文字を区別しない)
 		lowerName := strings.ToLower(d.Name())
 		if !d.IsDir() && (strings.HasSuffix(lowerName, ".txt") || strings.HasSuffix(lowerName, ".md")) {
-			fmt.Printf("Processing file: %s\n", path)
-
-			content, err := os.ReadFile(path)
-			if err != nil {
-				fmt.Printf("Error reading file %q: %v\n", path, err)
-				return nil // このファイルはスキップ
-			}
-
-			// 既にこのパスがインデックスされているかチェック (重複インデックス防止)
-			// より厳密には、ファイルの内容が同じかどうかで判断すべきだが、ここではパスで簡易的に判断
-			var existingDocID = -1
-			for id, doc := range idx.Docs {
-				if doc.Path == path {
-					existingDocID = id
-					break
-				}
-			}
-
-			docID := idx.NextDocID
-			if existingDocID != -1 {
-				docID = existingDocID
-				fmt.Printf("  File %s already partially indexed as DocID %d. Will update.\n", path, docID)
-			} else {
-				idx.Docs[docID] = Document{ID: docID, Path: path}
-				idx.NextDocID++
-			}
-
-			tokens := tokenizer.Tokenize(string(content))
-			// fmt.Printf("  Tokens (%s): %v\n", path, tokens) // ログが多いのでコメントアウト
-
-			addTokensToInvertedIndex(idx, docID, tokens)
+			filePaths = append(filePaths, path)
 		}
 		return nil
 	})
 
 	if err != nil {
-		return fmt.Errorf("error walking the path %q: %w", rootDirPath, err)
+		return fmt.Errorf("error walking the path %q to gather files: %w", rootDirPath, err)
 	}
 
-	fmt.Println("Index building process (file scan, tokenize, index construction) completed.")
+	if len(filePaths) == 0 {
+		fmt.Println("No file found to index")
+		return nil
+	}
+	fmt.Printf("Found %d files to process.\n", len(filePaths))
+
+	numWorkers := runtime.NumCPU()
+	if numWorkers > len(filePaths) {
+		numWorkers = len(filePaths)
+	}
+	fmt.Printf("Using %d workers goroutines.\n", numWorkers)
+
+	jobs := make(chan string, len(filePaths))
+	results := make(chan processdFileResult, len(filePaths))
+
+	var wg sync.WaitGroup
+
+	for w := 0; w < numWorkers; w++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			fmt.Printf("Workers %d started\n", workerID)
+			for filePath := range jobs {
+				content, err := os.ReadFile(filePath)
+				if err != nil {
+					results <- processdFileResult{filePath: filePath, err: fmt.Errorf("worker %d error reading file %q: %w", workerID, filePath, err)}
+					continue
+				}
+				tokens := tokenizer.Tokenize(string(content))
+				results <- processdFileResult{filePath: filePath, tokens: tokens, err: nil}
+			}
+			fmt.Printf("Worker %d finishd", workerID)
+		}(w)
+	}
+
+	for _, fp := range filePaths {
+		jobs <- fp
+	}
+	close(jobs)
+
+	var resultWg sync.WaitGroup
+	resultWg.Add(1)
+
+	go func() {
+		defer resultWg.Done()
+		processedCount := 0
+		for result := range results {
+			processedCount++
+			if result.err != nil {
+				fmt.Print("Error processing file %s: %v\n", result.filePath, result.err)
+				continue
+			}
+
+			var docID int
+			existingDocID := -1
+			for id, doc := range idx.Docs {
+				if doc.Path == result.filePath {
+					existingDocID = id
+					break
+				}
+			}
+			if existingDocID != -1 {
+				docID = existingDocID
+				// fmt.Printf("  File %s (DocID %d) will be updated.\n", result.filePath, docID)
+			} else {
+				docID = idx.NextDocID
+				idx.Docs[docID] = Document{ID: docID, Path: result.filePath}
+				idx.NextDocID++
+			}
+			addTokensToInvertedIndex(idx, docID, result.tokens)
+			if processedCount%100 == 0 { // 100ファイル処理するごとに進捗表示
+				fmt.Printf("Collected results for %d/%d files...\n", processedCount, len(filePaths))
+			}
+		}
+		fmt.Println("All results collected.")
+	}()
+
+	wg.Wait()
+	close(results)
+
+	resultWg.Wait()
+
+	fmt.Println("Index building process (concurrent file processing and index construction) completed.")
 	return nil
 }
 
