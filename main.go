@@ -51,25 +51,28 @@ func handleIndexCommand() {
 
 	fmt.Printf("Index command: targetDir='%s', indexPath='%s'\n", *targetDir, *indexPath)
 
-	idx, err := store.LoadIndex(*indexPath)
-	if err != nil && !os.IsNotExist(err) {
-		fmt.Printf("Error loading existing index: %v\n", err)
-		fmt.Println("Attempting to create a new index.")
-		idx = indexer.NewInvertedIndex()
+	oldIdx, err := store.LoadIndex(*indexPath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			fmt.Printf("Warning: Error loading existing index: %v. A new index will be built.\n", err)
+		}
+		if oldIdx == nil {
+			oldIdx = indexer.NewInvertedIndex()
+		}
 	}
 
-	err = indexer.BuildIndex(*targetDir, idx)
-	if err != nil {
-		fmt.Printf("Error building index: %v\n", err)
+	newIdx, buildErr := indexer.BuildIndex(*targetDir, oldIdx)
+	if buildErr != nil {
+		fmt.Printf("Error building/updating index: %v\n", buildErr)
 		os.Exit(1)
 	}
 
-	err = store.SaveIndex(idx, *indexPath)
-	if err != nil {
-		fmt.Printf("Error saving index: %v\n", err)
+	saveErr := store.SaveIndex(newIdx, *indexPath)
+	if saveErr != nil {
+		fmt.Printf("Error saving index: %v\n", saveErr)
 		os.Exit(1)
 	}
-	fmt.Println("Index built and saved successfully.")
+	fmt.Println("Index built/updated and saved successfully.")
 }
 
 func handleSearchCommand() {
