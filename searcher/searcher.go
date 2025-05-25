@@ -24,7 +24,7 @@ const (
 	maxSnippetsPerDoc   = 2 // 1ドキュメントあたり表示するスニペットの最大数
 )
 
-func generateSnippet(docContent string, keywordToHighlight string, positionsInDoc []int, contextWords int) string {
+func generateSnippet(docContent string, keywordToHighlight string, positionsInDoc []int) string {
 	if len(positionsInDoc) == 0 {
 		return ""
 	}
@@ -75,6 +75,7 @@ func calculateIDF(totalDocuments int, docsContainingTerm int) float64 {
 	if docsContainingTerm == 0 {
 		return 0
 	}
+
 	// IDF(t) = log(N / df_t) -- N:総文書数, df_t:単語tを含む文書数
 	return math.Log(float64(totalDocuments) / float64(docsContainingTerm))
 }
@@ -218,7 +219,7 @@ func Search(idx *indexer.InvertedIndex, query string, mode string) []SearchResul
 				if generatedSnippetsCount >= maxSnippetsPerDoc {
 					break
 				}
-				snippet := generateSnippet(docContent, term, termPostingMap[term].Positions, snippetContextWords)
+				snippet := generateSnippet(docContent, term, termPostingMap[term].Positions)
 				if snippet != "" {
 					snippets = append(snippets, snippet)
 					generatedSnippetsCount++
