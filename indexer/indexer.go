@@ -4,6 +4,7 @@ package indexer
 import (
 	"fmt"
 	"gmi/tokenizer"
+	"gmi/ui"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -23,7 +24,7 @@ type processedFileResult struct {
 }
 
 func BuildIndex(rootDirPath string, oldIdx *InvertedIndex) (*InvertedIndex, error) {
-	fmt.Printf("Starting to build/update index for directory (concurrently, diff update): %s\n", rootDirPath)
+	fmt.Printf("%s Starting to build/update index for: %s\n", ui.Cyan("▶"), rootDirPath)
 
 	newIdx := NewInvertedIndex()
 	if oldIdx != nil && oldIdx.NextDocID > 0 {
@@ -33,14 +34,14 @@ func BuildIndex(rootDirPath string, oldIdx *InvertedIndex) (*InvertedIndex, erro
 	currentFileSystemFiles := make(map[string]fs.FileInfo) // path -> FileInfo
 	err := filepath.WalkDir(rootDirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			fmt.Printf("Error accessing path %q during WalkDir: %v\n", path, err)
+			fmt.Printf("%s accessing path %q during WalkDir: %v\n", ui.Yellow("Warning:"), path, err)
 			return err
 		}
 		lowerName := strings.ToLower(d.Name())
 		if !d.IsDir() && (strings.HasSuffix(lowerName, ".txt") || strings.HasSuffix(lowerName, ".md")) {
 			info, statErr := d.Info()
 			if statErr != nil {
-				fmt.Printf("Error getting FileInfo for %s: %v\n", path, statErr)
+				fmt.Printf("%s getting FileInfo for %s: %v\n", ui.Yellow("Warning:"), path, statErr)
 				return nil
 			}
 			currentFileSystemFiles[path] = info
@@ -48,14 +49,14 @@ func BuildIndex(rootDirPath string, oldIdx *InvertedIndex) (*InvertedIndex, erro
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error walking the path %q to gather files: %w", rootDirPath, err)
+		return nil, fmt.Errorf("%s walking the path %q to gather files: %w", "error", rootDirPath, err)
 	}
 
 	if len(currentFileSystemFiles) == 0 {
-		fmt.Println("No files found in the target directory. Returning an empty index.")
+		fmt.Println(ui.Yellow("No files found in the target directory. Returning an empty index."))
 		return NewInvertedIndex(), nil
 	}
-	fmt.Printf("Found %d files in current file system.\n", len(currentFileSystemFiles))
+	fmt.Printf("%s Found %d files in current file system.\n", ui.Cyan("ℹ"), len(currentFileSystemFiles))
 
 	var filesToProcess []string
 	oldDocsByPath := make(map[string]Document)
@@ -72,9 +73,9 @@ func BuildIndex(rootDirPath string, oldIdx *InvertedIndex) (*InvertedIndex, erro
 			filesToProcess = append(filesToProcess, path)
 		} else {
 			if existsInOldIndex {
-				fmt.Printf("File %s changed (OldTime: %s, NewTime: %s).\n", path, oldDoc.LastModified, fileInfo.ModTime())
+				fmt.Printf("%s File %s changed (OldTime: %s, NewTime: %s).\n", ui.Yellow("↺"), path, oldDoc.LastModified, fileInfo.ModTime())
 			} else {
-				fmt.Printf("New file %s found.\n", path)
+				fmt.Printf("%s New file %s found.\n", ui.Green("+"), path)
 			}
 			filesToProcess = append(filesToProcess, path)
 		}
@@ -83,7 +84,7 @@ func BuildIndex(rootDirPath string, oldIdx *InvertedIndex) (*InvertedIndex, erro
 	if oldIdx != nil {
 		for path := range oldDocsByPath {
 			if _, existsInCurrentFS := currentFileSystemFiles[path]; !existsInCurrentFS {
-				fmt.Printf("File %s was deleted.\n", path)
+				fmt.Printf("%s File %s was deleted.\n", ui.Yellow("-"), path)
 			}
 		}
 	}
@@ -95,7 +96,7 @@ func BuildIndex(rootDirPath string, oldIdx *InvertedIndex) (*InvertedIndex, erro
 		}
 		return newIdx, nil
 	}
-	fmt.Printf("%d files will be (re)processed.\n", len(filesToProcess))
+	fmt.Printf("%s %d files will be (re)processed.\n", ui.Cyan("▶"), len(filesToProcess))
 
 	numWorkers := runtime.NumCPU()
 	if numWorkers > len(filesToProcess) {
@@ -142,7 +143,7 @@ func BuildIndex(rootDirPath string, oldIdx *InvertedIndex) (*InvertedIndex, erro
 		for result := range results {
 			processedCount++
 			if result.err != nil {
-				fmt.Printf("Error processing file %s: %v\n", result.filePath, result.err)
+				fmt.Printf("%s processing file %s: %v\n", ui.Yellow("Warning:"), result.filePath, result.err)
 				continue
 			}
 
@@ -165,7 +166,7 @@ func BuildIndex(rootDirPath string, oldIdx *InvertedIndex) (*InvertedIndex, erro
 	close(results)
 	resultWg.Wait()
 
-	fmt.Println("Index update process completed.")
+	fmt.Println(ui.Green("Index update process completed."))
 	return newIdx, nil
 }
 
